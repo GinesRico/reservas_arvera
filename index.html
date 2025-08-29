@@ -8,13 +8,16 @@
     margin: 0;
     font-family: sans-serif;
   }
+  /* Desplazamos los contenedores hacia abajo 60px para no tapar los botones */
   #my-cal-inline-citas, #google-calendar {
     width: 100%;
-    height: 100vh;
+    height: calc(100vh - 60px);
     display: none;
     overflow: scroll;
     border: none;
+    margin-top: 60px;
   }
+
   /* Botones flotantes */
   #refresh-btn, #google-btn {
     position: fixed;
@@ -26,8 +29,11 @@
     padding: 8px;
     cursor: pointer;
   }
+
+  /* Posición de los botones */
   #refresh-btn { left: 10px; }
-  #google-btn { left: 100px; }
+  #google-btn { left: 60px; }
+
   #refresh-btn svg, #google-btn svg {
     display: block;
     width: 24px;
@@ -45,7 +51,7 @@
 </head>
 <body>
 
-<!-- Botones flotantes con iconos -->
+<!-- Botones flotantes -->
 <button id="refresh-btn" title="Inicio">
   <!-- Icono casa -->
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -54,9 +60,9 @@
 </button>
 
 <button id="google-btn" title="Google Calendar">
-  <!-- Icono calendario -->
+  <!-- Icono calendario alternativo -->
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-    <path d="M19 4h-1v-2h-2v2h-8v-2h-2v2h-1c-1.103 0-2 .897-2 2v16c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2v-16c0-1.103-.897-2-2-2zm0 18h-16v-11h16v11zm0-13h-16v-3h16v3z"/>
+    <path d="M7 10h5v5h-5zM3 4v2h18v-2h-2v-2h-2v2h-8v-2h-2v2h-2zm18 18h-18v-14h18v14z"/>
   </svg>
 </button>
 
