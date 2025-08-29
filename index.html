@@ -4,80 +4,94 @@
 <meta charset="UTF-8">
 <title>Reservas Arvera</title>
 <style>
-  body {
-    margin: 0;
-    font-family: sans-serif;
-  }
-  #my-cal-inline-citas {
-    width: 100%;
-    height: 100vh; /* ocupa toda la ventana */
-    overflow: scroll;
-  }
-  #refresh-btn {
+  body { margin:0; font-family: sans-serif; }
+  #buttons {
     position: fixed;
     top: 10px;
     left: 10px;
     z-index: 1000;
+  }
+  #buttons button {
     padding: 10px 20px;
+    margin-right: 5px;
     background-color: #1a23a1;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
+  }
+  #calendar-container {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+  }
+  #my-cal-inline-citas, #google-calendar {
+    width: 100%;
+    height: 100%;
+    display: none;
+    border: none;
   }
 </style>
 </head>
 <body>
 
-<button id="refresh-btn" onclick="location.reload()">Inicio</button>
+<div id="buttons">
+  <button id="cal-btn">Reservas</button>
+  <button id="google-btn">Calendario</button>
+</div>
 
-<!-- Cal inline embed code begins -->
-<div id="my-cal-inline-citas"></div>
-<script type="text/javascript">
-(function (C, A, L) { 
-  let p = function (a, ar) { a.q.push(ar); }; 
-  let d = C.document; 
-  C.Cal = C.Cal || function () { 
-    let cal = C.Cal; 
-    let ar = arguments; 
-    if (!cal.loaded) { 
-      cal.ns = {}; 
-      cal.q = cal.q || []; 
-      d.head.appendChild(d.createElement("script")).src = A; 
-      cal.loaded = true; 
-    } 
-    if (ar[0] === L) { 
-      const api = function () { p(api, arguments); }; 
-      const namespace = ar[1]; 
-      api.q = api.q || []; 
-      if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} 
-      else p(cal, ar); 
-      return;
-    } 
-    p(cal, ar); 
-  }; 
-})(window, "https://app.cal.com/embed/embed.js", "init");
+<div id="calendar-container">
+  <!-- Cal.com -->
+  <div id="my-cal-inline-citas"></div>
 
-Cal("init", "citas", {origin:"https://app.cal.com"});
+  <!-- Google Calendar -->
+  <iframe id="google-calendar" src="https://calendar.google.com/calendar/embed?src=arvera1982%40gmail.com&ctz=Europe%2FMadrid" style="border:0;" frameborder="0" scrolling="no"></iframe>
+</div>
 
-Cal.ns.citas("inline", {
-  elementOrSelector:"#my-cal-inline-citas",
-  config: {"layout":"column_view","theme":"light"},
-  calLink: "arvera/citas",
-});
+<script>
+  const calDiv = document.getElementById("my-cal-inline-citas");
+  const googleFrame = document.getElementById("google-calendar");
+  const calBtn = document.getElementById("cal-btn");
+  const googleBtn = document.getElementById("google-btn");
 
-Cal.ns.citas("ui", {
-  "theme":"light",
-  "cssVarsPerTheme":{
-    "light":{"cal-brand":"#1a23a1"},
-    "dark":{"cal-brand":"#fafafa"}
-  },
-  "hideEventTypeDetails":false,
-  "layout":"column_view"
-});
+  // Mostrar Cal.com
+  calBtn.addEventListener("click", () => {
+    googleFrame.style.display = "none";
+    calDiv.style.display = "block";
+  });
+
+  // Mostrar Google Calendar
+  googleBtn.addEventListener("click", () => {
+    calDiv.style.display = "none";
+    googleFrame.style.display = "block";
+  });
+
+  // Inicializar Cal.com
+  const script = document.createElement("script");
+  script.src = "https://app.cal.com/embed/embed.js";
+  script.onload = () => {
+    Cal("init", "citas", {origin:"https://app.cal.com"});
+    Cal.ns.citas("inline", {
+      elementOrSelector:"#my-cal-inline-citas",
+      config: {"layout":"column_view","theme":"light"},
+      calLink: "arvera/citas",
+    });
+    Cal.ns.citas("ui", {
+      "theme":"light",
+      "cssVarsPerTheme":{
+        "light":{"cal-brand":"#1a23a1"},
+        "dark":{"cal-brand":"#fafafa"}
+      },
+      "hideEventTypeDetails":false,
+      "layout":"column_view"
+    });
+  };
+  document.head.appendChild(script);
+
+  // Mostrar Cal.com por defecto al cargar la página
+  calDiv.style.display = "block";
 </script>
-<!-- Cal inline embed code ends -->
 
 </body>
 </html>
