@@ -37,8 +37,8 @@
 <body>
 
 <div id="buttons">
-  <button id="cal-btn">Reservas</button>
-  <button id="google-btn">Calendario</button>
+  <button id="refresh-btn">Inicio</button>
+  <button id="google-btn">Google Calendar</button>
 </div>
 
 <div id="calendar-container">
@@ -46,22 +46,29 @@
   <div id="my-cal-inline-citas"></div>
 
   <!-- Google Calendar -->
-  <iframe id="google-calendar" src="https://calendar.google.com/calendar/embed?src=arvera1982%40gmail.com&ctz=Europe%2FMadrid" style="border:0;" frameborder="0" scrolling="no"></iframe>
+  <iframe id="google-calendar"
+    src="https://calendar.google.com/calendar/embed?src=arvera1982%40gmail.com&ctz=Europe%2FMadrid&mode=WEEK"
+    style="border:0;"
+    frameborder="0"
+    scrolling="no">
+  </iframe>
 </div>
 
 <script>
   const calDiv = document.getElementById("my-cal-inline-citas");
   const googleFrame = document.getElementById("google-calendar");
-  const calBtn = document.getElementById("cal-btn");
+  const refreshBtn = document.getElementById("refresh-btn");
   const googleBtn = document.getElementById("google-btn");
 
-  // Mostrar Cal.com
-  calBtn.addEventListener("click", () => {
-    googleFrame.style.display = "none";
-    calDiv.style.display = "block";
+  // Mostrar Cal.com por defecto
+  calDiv.style.display = "block";
+
+  // Botón Inicio: recarga la página
+  refreshBtn.addEventListener("click", () => {
+    location.reload();
   });
 
-  // Mostrar Google Calendar
+  // Botón Google Calendar: mostrar iframe
   googleBtn.addEventListener("click", () => {
     calDiv.style.display = "none";
     googleFrame.style.display = "block";
@@ -88,9 +95,6 @@
     });
   };
   document.head.appendChild(script);
-
-  // Mostrar Cal.com por defecto al cargar la página
-  calDiv.style.display = "block";
 </script>
 
 </body>
