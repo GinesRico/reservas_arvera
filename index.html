@@ -35,6 +35,7 @@
       margin-top: 60px;
     }
 
+    /* botones flotantes */
     .btn-float {
       position: fixed;
       top: 10px;
@@ -71,7 +72,7 @@
 </head>
 <body>
 
-  <!-- LOGIN -->
+  <!-- ===== LOGIN ===== -->
   <div id="login-screen" aria-hidden="false">
     <img src="logotipo_ARVERA_W.png" alt="Arvera" class="logo" />
     <div id="login-card">
@@ -81,6 +82,7 @@
            data-auto_prompt="false"
            data-ux_mode="popup">
       </div>
+
       <div class="g_id_signin"
            data-type="standard"
            data-shape="rectangular"
@@ -91,39 +93,45 @@
     </div>
   </div>
 
-  <!-- APP -->
+  <!-- ===== APP ===== -->
   <div id="app" aria-hidden="true">
     <button id="btn-home" class="btn-float" title="Inicio (recargar)">
       <svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-12v-9h-3l9-8z"/></svg>
     </button>
+
     <button id="btn-google-view" class="btn-float" title="Ver Google Calendar">
       <svg viewBox="0 0 24 24"><path d="M7 10h5v5h-5zM3 4v2h18v-2h-2v-2h-2v2h-8v-2h-2v2h-2zm18 18h-18v-14h18v14z"/></svg>
     </button>
+
     <button id="btn-logout" class="btn-float" title="Salir">
       <svg viewBox="0 0 24 24"><path d="M16 13v-2h-6v-3l-5 4 5 4v-3zM20 3h-10v2h10v14h-10v2h10c1.103 0 2-.897 2-2v-14c0-1.103-.897-2-2-2z"/></svg>
     </button>
 
     <div id="google-warning">Atención: tu calendario de Google no es público — los visitantes no verán los eventos.</div>
+
     <div id="my-cal-inline-citas"></div>
     <iframe id="google-calendar"
             src="https://calendar.google.com/calendar/embed?src=arvera1982%40gmail.com&ctz=Europe%2FMadrid&mode=WEEK"
             frameborder="0" scrolling="no" title="Google Calendar"></iframe>
   </div>
 
-  <!-- Cal.com Snippet -->
+  <!-- Cal.com snippet -->
   <script type="text/javascript">
   (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
 
   Cal("init", "citas", {origin:"https://app.cal.com"});
+
   Cal.ns.citas("inline", {
     elementOrSelector:"#my-cal-inline-citas",
     config: {"layout":"column_view","theme":"light"},
     calLink: "arvera/citas",
   });
+
   Cal.ns.citas("ui", {"theme":"light","cssVarsPerTheme":{"light":{"cal-brand":"#1a23a1"},"dark":{"cal-brand":"#fafafa"}},"hideEventTypeDetails":false,"layout":"column_view"});
   </script>
 
 <script>
+  /********** CONFIG ACCESO **********/
   const ALLOWED_EMAILS = ["arvera1982@gmail.com"];
   const ALLOWED_DOMAIN = null;
 
@@ -133,17 +141,21 @@
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const pad = base64.length % 4;
       const padded = base64 + (pad ? '='.repeat(4 - pad) : '');
-      const jsonPayload = decodeURIComponent(atob(padded).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+      const jsonPayload = decodeURIComponent(atob(padded).split('').map(c => '%' + ('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
       return JSON.parse(jsonPayload);
-    } catch { return null; }
+    } catch(e){ return null; }
   }
 
   function handleCredentialResponse(response) {
     const payload = parseJwt(response.credential);
-    if (!payload) return alert("Error al leer la respuesta de Google.");
+    if (!payload) { alert("Error al leer la respuesta de Google."); return; }
+
     const email = (payload.email || "").toLowerCase();
     const domain = (email.split('@')[1] || "").toLowerCase();
-    if (ALLOWED_EMAILS.includes(email) || (ALLOWED_DOMAIN && domain === ALLOWED_DOMAIN.toLowerCase())) {
+    const emailAllowed = ALLOWED_EMAILS.includes(email);
+    const domainAllowed = ALLOWED_DOMAIN && domain === ALLOWED_DOMAIN.toLowerCase();
+
+    if (emailAllowed || domainAllowed) {
       sessionStorage.setItem("arvera_logged_in", email);
       showApp();
     } else {
@@ -152,44 +164,54 @@
     }
   }
 
+  /********** LÓGICA DE LA APP **********/
   document.addEventListener("DOMContentLoaded", () => {
-    if (sessionStorage.getItem("arvera_logged_in")) showApp();
-    document.getElementById("btn-home").addEventListener("click", ()=>{ 
-      document.getElementById("my-cal-inline-citas").style.display="block";
-      document.getElementById("google-calendar").style.display="none";
+    const logged = sessionStorage.getItem("arvera_logged_in");
+    if (logged) showApp();
+
+    document.getElementById("btn-home").addEventListener("click", () => {
+      document.getElementById("my-cal-inline-citas").style.display = "block";
+      document.getElementById("google-calendar").style.display = "none";
     });
-    document.getElementById("btn-google-view").addEventListener("click", ()=>{ 
-      document.getElementById("my-cal-inline-citas").style.display="none";
-      document.getElementById("google-calendar").style.display="block";
+    document.getElementById("btn-google-view").addEventListener("click", () => {
+      document.getElementById("my-cal-inline-citas").style.display = "none";
+      document.getElementById("google-calendar").style.display = "block";
     });
     document.getElementById("btn-logout").addEventListener("click", logout);
   });
 
-  let lastUpdate = null;
-  function showApp() {
-    document.getElementById("login-screen").style.display="none";
-    document.getElementById("app").style.display="block";
-    document.getElementById("my-cal-inline-citas").style.display="block";
+  let autoReloadIntervalId = null;
 
-    // refresco automático usando tu webhook n8n/Redis
-    setInterval(async ()=>{
-      try {
-        const res = await fetch('https://webhook.arvera.es/webhook/check-update');
-        if(res.ok){
-          const data = await res.json();
-          const updatedAt = data.updatedAt;
-          if(updatedAt && updatedAt !== lastUpdate){
-            lastUpdate = updatedAt;
-            location.reload();
+  function showApp() {
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    document.body.style.backgroundColor = "#ffffff";
+    document.getElementById("my-cal-inline-citas").style.display = "block";
+    document.getElementById("google-calendar").style.display = "none";
+
+    // Iniciar loop seguro de refresco usando lastUpdate
+    let lastUpdate = sessionStorage.getItem('lastUpdate') || null;
+
+    if (!autoReloadIntervalId) {
+      autoReloadIntervalId = setInterval(async () => {
+        try {
+          const res = await fetch('https://webhook.arvera.es/webhook/check-update');
+          if (res.ok) {
+            const data = await res.json();
+            const updatedAt = data.updatedAt;
+            if (updatedAt && updatedAt !== lastUpdate) {
+              lastUpdate = updatedAt;
+              sessionStorage.setItem('lastUpdate', lastUpdate);
+              location.reload();
+            }
           }
-        }
-      } catch(e){ console.log("Error al verificar cambios:", e); }
-    }, 5000); // cada 5s
+        } catch(e) { console.log("Error al verificar cambios:", e); }
+      }, 5000); // cada 5s
+    }
   }
 
-  function logout(){
+  function logout() {
     sessionStorage.removeItem("arvera_logged_in");
-    if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
     location.reload();
   }
 </script>
