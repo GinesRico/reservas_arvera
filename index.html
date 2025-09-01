@@ -1,144 +1,322 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Reservas Arvera</title>
-<style>
-  body {
-    margin: 0;
-    font-family: sans-serif;
-  }
-  /* Desplazamos los contenedores hacia abajo 60px para no tapar los botones */
-  #my-cal-inline-citas, #google-calendar {
-    width: 100%;
-    height: calc(100vh - 60px);
-    display: none;
-    overflow: scroll;
-    border: none;
-    margin-top: 60px;
-  }
+  <meta charset="UTF-8" />
+  <title>Reservas Arvera</title>
 
-  /* Botones flotantes */
-  #refresh-btn, #google-btn {
-    position: fixed;
-    top: 10px;
-    z-index: 1000;
-    background-color: #1a23a1;
-    border: none;
-    border-radius: 5px;
-    padding: 8px;
-    cursor: pointer;
-  }
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  /* Posición de los botones */
-  #refresh-btn { left: 10px; }
-  #google-btn { left: 60px; }
+  <style>
+    :root {
+      --brand: #1a23a1; /* color de marca */
+    }
 
-  #refresh-btn svg, #google-btn svg {
-    display: block;
-    width: 24px;
-    height: 24px;
-    fill: white;
-  }
-</style>
+    html, body { height: 100%; margin: 0; font-family: sans-serif; }
 
-<!-- Recarga automática cada 60 segundos -->
-<script>
-  setInterval(() => {
-    location.reload();
-  }, 60000);
-</script>
+    /* ====== LOGIN (pantalla principal) ====== */
+    #login-screen {
+      background: var(--brand);
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .logo {
+      max-width: 320px;
+      width: 60%;
+      height: auto;
+      display: block;
+    }
+    #login-card {
+      background: transparent;
+      text-align: center;
+    }
+
+    /* ====== APP (oculta hasta login) ====== */
+    #app {
+      display: none;
+    }
+
+    /* desplazamos los contenedores 60px hacia abajo para no tapar botones */
+    #my-cal-inline-citas, #google-calendar {
+      width: 100%;
+      height: calc(100vh - 60px);
+      display: none;
+      overflow: auto;
+      border: none;
+      margin-top: 60px;
+    }
+
+    /* botones flotantes */
+    .btn-float {
+      position: fixed;
+      top: 10px;
+      z-index: 1200;
+      background-color: var(--brand);
+      border: none;
+      border-radius: 6px;
+      padding: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #btn-home { left: 10px; }
+    #btn-google-view { left: 70px; }
+    #btn-logout { right: 10px; background: #e53935; color: white; }
+
+    .btn-float svg { width: 20px; height: 20px; fill: white; }
+
+    /* ajuste responsivo */
+    @media (max-width: 480px) {
+      .logo { max-width: 200px; }
+      #btn-google-view { left: 60px; }
+    }
+
+    /* pequeño mensaje si el calendario de Google no es público */
+    #google-warning {
+      display: none;
+      position: absolute;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff7c0;
+      color: #5a4000;
+      padding: 8px 12px;
+      border-radius: 6px;
+      z-index: 1250;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+  </style>
 </head>
 <body>
 
-<!-- Botones flotantes -->
-<button id="refresh-btn" title="Inicio">
-  <!-- Icono casa -->
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-    <path d="M12 3l9 8h-3v9h-12v-9h-3l9-8z"/>
-  </svg>
-</button>
+  <!-- ========== PANTALLA DE LOGIN ========== -->
+  <div id="login-screen" aria-hidden="false">
+    <!-- Logo: el archivo debe estar en el mismo directorio -->
+    <img src="logotipo_ARVERA_W.png" alt="Arvera" class="logo" />
 
-<button id="google-btn" title="Google Calendar">
-  <!-- Icono calendario alternativo -->
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-    <path d="M7 10h5v5h-5zM3 4v2h18v-2h-2v-2h-2v2h-8v-2h-2v2h-2zm18 18h-18v-14h18v14z"/>
-  </svg>
-</button>
+    <div id="login-card">
+      <!-- Google Identity: carga y callback -->
+      <div id="g_id_onload"
+           data-client_id="TU_CLIENT_ID.apps.googleusercontent.com"
+           data-callback="handleCredentialResponse"
+           data-auto_prompt="false"
+           data-ux_mode="popup">
+      </div>
 
-<!-- Contenedor Cal.com -->
-<div id="my-cal-inline-citas"></div>
+      <!-- Botón visual de Google -->
+      <div class="g_id_signin"
+           data-type="standard"
+           data-shape="rectangular"
+           data-theme="outline"
+           data-text="signin_with"
+           data-size="large">
+      </div>
+    </div>
+  </div>
 
-<!-- Contenedor Google Calendar -->
-<iframe id="google-calendar"
-        src="https://calendar.google.com/calendar/embed?src=arvera1982%40gmail.com&ctz=Europe%2FMadrid&mode=WEEK"
-        frameborder="0" scrolling="no">
-</iframe>
+  <!-- ========== APP (oculta hasta login) ========== -->
+  <div id="app" aria-hidden="true">
+    <!-- Botones flotantes -->
+    <button id="btn-home" class="btn-float" title="Inicio (recargar)">
+      <!-- icono casa -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3l9 8h-3v9h-12v-9h-3l9-8z"/></svg>
+    </button>
 
-<!-- Cal inline embed code -->
-<script type="text/javascript">
-(function (C, A, L) { 
-  let p = function (a, ar) { a.q.push(ar); }; 
-  let d = C.document; 
-  C.Cal = C.Cal || function () { 
-    let cal = C.Cal; 
-    let ar = arguments; 
-    if (!cal.loaded) { 
-      cal.ns = {}; 
-      cal.q = cal.q || []; 
-      d.head.appendChild(d.createElement("script")).src = A; 
-      cal.loaded = true; 
-    } 
-    if (ar[0] === L) { 
-      const api = function () { p(api, arguments); }; 
-      const namespace = ar[1]; 
-      api.q = api.q || []; 
-      if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} 
-      else p(cal, ar); 
-      return;
-    } 
-    p(cal, ar); 
-  }; 
-})(window, "https://app.cal.com/embed/embed.js", "init");
+    <button id="btn-google-view" class="btn-float" title="Ver Google Calendar">
+      <!-- icono calendario -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10h5v5h-5zM3 4v2h18v-2h-2v-2h-2v2h-8v-2h-2v2h-2zm18 18h-18v-14h18v14z"/></svg>
+    </button>
 
-Cal("init", "citas", {origin:"https://app.cal.com"});
+    <button id="btn-logout" class="btn-float" title="Salir">
+      <!-- icono salir -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 13v-2h-6v-3l-5 4 5 4v-3zM20 3h-10v2h10v14h-10v2h10c1.103 0 2-.897 2-2v-14c0-1.103-.897-2-2-2z"/></svg>
+    </button>
 
-Cal.ns.citas("inline", {
-  elementOrSelector:"#my-cal-inline-citas",
-  config: {"layout":"column_view","theme":"light"},
-  calLink: "arvera/citas",
-});
+    <div id="google-warning">Atención: tu calendario de Google no es público — los visitantes no verán los eventos.</div>
 
-Cal.ns.citas("ui", {
-  "theme":"light",
-  "cssVarsPerTheme":{
-    "light":{"cal-brand":"#1a23a1"},
-    "dark":{"cal-brand":"#fafafa"}
-  },
-  "hideEventTypeDetails":false,
-  "layout":"column_view"
-});
-</script>
+    <!-- Contenedor Cal.com -->
+    <div id="my-cal-inline-citas" aria-label="Calendario de reservas"></div>
+
+    <!-- Contenedor Google Calendar -->
+    <iframe id="google-calendar"
+            src="https://calendar.google.com/calendar/embed?src=arvera1982%40gmail.com&ctz=Europe%2FMadrid&mode=WEEK"
+            frameborder="0" scrolling="no" title="Google Calendar"></iframe>
+  </div>
 
 <script>
-  const calDiv = document.getElementById("my-cal-inline-citas");
-  const googleFrame = document.getElementById("google-calendar");
-  const refreshBtn = document.getElementById("refresh-btn");
-  const googleBtn = document.getElementById("google-btn");
+  /******************
+   * CONFIGURACIÓN
+   ******************/
+  // Emails permitidos para acceder:
+  const ALLOWED_EMAILS = ["arvera1982@gmail.com"];
+  // o permitir todo un dominio: e.g. const ALLOWED_DOMAIN = "arvera.es";
+  const ALLOWED_DOMAIN = null; // si quieres permitir todo @arvera.es pon "arvera.es"
 
-  // Mostrar Cal.com por defecto
-  calDiv.style.display = "block";
+  // estado
+  let autoReloadIntervalId = null;
+  let calLoaded = false;
 
-  // Botón Inicio: recarga la página
-  refreshBtn.addEventListener("click", () => {
+  /******************
+   * UTILIDADES JWT
+   ******************/
+  function parseJwt (token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      // añadir padding si hace falta
+      const pad = base64.length % 4;
+      const padded = base64 + (pad ? '='.repeat(4 - pad) : '');
+      const jsonPayload = decodeURIComponent(atob(padded).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /******************
+   * GESTIÓN LOGIN
+   ******************/
+  function handleCredentialResponse(response) {
+    // response.credential es el ID token JWT
+    const payload = parseJwt(response.credential);
+    if (!payload) {
+      alert("No se pudo parsear la respuesta de Google.");
+      return;
+    }
+
+    const email = payload.email || "";
+    const domain = (email.split('@')[1] || "").toLowerCase();
+
+    // comprobar autorización
+    const emailAllowed = ALLOWED_EMAILS.includes(email.toLowerCase());
+    const domainAllowed = ALLOWED_DOMAIN && domain === ALLOWED_DOMAIN.toLowerCase();
+
+    if (emailAllowed || domainAllowed) {
+      // guardar sesión en sessionStorage
+      sessionStorage.setItem("arvera_logged_in", email);
+      showApp(); // muestra la app
+    } else {
+      alert("Acceso denegado. Usuario no autorizado.");
+      // opcional: deshabilitar auto-select de Google
+      if (window.google && google.accounts && google.accounts.id) {
+        google.accounts.id.disableAutoSelect();
+      }
+    }
+  }
+
+  // Si ya había sesión en sessionStorage -> auto-login
+  document.addEventListener("DOMContentLoaded", () => {
+    const logged = sessionStorage.getItem("arvera_logged_in");
+    if (logged) {
+      // mostrar app directamente
+      showApp();
+    }
+  });
+
+  function showApp() {
+    // ocultar login y mostrar app
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    document.getElementById("app").setAttribute("aria-hidden", "false");
+    // normalizar fondo
+    document.body.style.backgroundColor = "#ffffff";
+
+    // iniciar recarga automática de toda la página cada 60s (si quieres)
+    if (!autoReloadIntervalId) {
+      autoReloadIntervalId = setInterval(() => {
+        location.reload();
+      }, 60000);
+    }
+
+    // cargar Cal.com (solo una vez)
+    if (!calLoaded) loadCalCom();
+    // mostrar cal por defecto
+    document.getElementById("my-cal-inline-citas").style.display = "block";
+    document.getElementById("google-calendar").style.display = "none";
+
+    // comprobar si Google Calendar puede mostrar eventos (no 100% fiable):
+    // si el iframe carga y su contenido no es accesible por CORS, no podemos inspeccionarlo,
+    // así que mostramos un aviso manual por si el calendario no está público.
+    // Dejamos el aviso oculto por defecto; el usuario puede desactivarlo si todo ok.
+    // (Puedes activar siempre mostrando: document.getElementById('google-warning').style.display = 'block';)
+  }
+
+  function logout() {
+    // limpiar sesión
+    sessionStorage.removeItem("arvera_logged_in");
+    // desactivar auto select de Google
+    if (window.google && google.accounts && google.accounts.id) {
+      google.accounts.id.disableAutoSelect();
+    }
+    // recargar para volver al login
     location.reload();
+  }
+
+  /******************
+   * BOTONES / UI
+   ******************/
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("btn-home").addEventListener("click", () => {
+      // volver a Cal.com
+      document.getElementById("my-cal-inline-citas").style.display = "block";
+      document.getElementById("google-calendar").style.display = "none";
+      // si quieres recargar el widget en vez de la página, podrías forzar recarga del widget aquí.
+    });
+
+    document.getElementById("btn-google-view").addEventListener("click", () => {
+      document.getElementById("my-cal-inline-citas").style.display = "none";
+      document.getElementById("google-calendar").style.display = "block";
+      // mostrar aviso si deseas:
+      // document.getElementById('google-warning').style.display = 'block';
+    });
+
+    document.getElementById("btn-logout").addEventListener("click", logout);
   });
 
-  // Botón Google Calendar: mostrar iframe
-  googleBtn.addEventListener("click", () => {
-    calDiv.style.display = "none";
-    googleFrame.style.display = "block";
-  });
+  /******************
+   * CARGA CAL.COM
+   * Cargamos el embed solo cuando el usuario entra.
+   ******************/
+  function loadCalCom() {
+    calLoaded = true;
+
+    // Cargar el script oficial y luego inicializar
+    const s = document.createElement("script");
+    s.src = "https://app.cal.com/embed/embed.js";
+    s.onload = () => {
+      try {
+        Cal("init", "citas", { origin: "https://app.cal.com" });
+        Cal.ns.citas("inline", {
+          elementOrSelector: "#my-cal-inline-citas",
+          config: { layout: "column_view", theme: "light" },
+          calLink: "arvera/citas",
+        });
+        Cal.ns.citas("ui", {
+          theme: "light",
+          cssVarsPerTheme: {
+            light: { "cal-brand": "#1a23a1" },
+            dark: { "cal-brand": "#fafafa" },
+          },
+          hideEventTypeDetails: false,
+          layout: "column_view",
+        });
+      } catch (e) {
+        // En teoría el embed.js crea Cal global y las API deberían funcionar.
+        console.error("Error inicializando Cal.com:", e);
+      }
+    };
+    s.onerror = () => {
+      console.error("No se pudo cargar https://app.cal.com/embed/embed.js");
+    };
+    document.head.appendChild(s);
+  }
 </script>
 
 </body>
